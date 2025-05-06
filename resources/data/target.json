@@ -1,0 +1,54 @@
+{
+  "project_overview": {
+    "name": "Project Overview",
+    "description": "Main purpose and description of the project",
+    "required": true,
+    "example": ["AI agent that collects information through conversations with users.", "AI agent that derives insights through conversations with users."]
+  },
+  "target_audience": {
+    "name": "Target Users",
+    "description": "Main user segment for the project",
+    "required": true,
+    "example": ["Researchers", "Developers"]
+  },
+  "tech_stack": {
+    "name": "Tech Stack",
+    "description": "Main technologies and libraries used",
+    "required": true,
+    "example": ["Streamlit", "Python", "LangChain"]
+  },
+  "features": {
+    "name": "Main Features",
+    "description": "List of main application features",
+    "required": true,
+    "example": [
+      {
+        "name": "Interactive Data Collection",
+        "description": "Information collection through natural conversation"
+      },
+      {
+        "name": "JSON Format Storage",
+        "description": "Store collected data in structured format"
+      }
+    ]
+  },
+  "limitations": {
+    "name": "Limitations",
+    "description": "Current application limitations or future improvements",
+    "required": false,
+    "example": [
+      "Offline mode not supported",
+      "Limited processing of large data"
+    ]
+  },
+  "author_info": {
+    "name": "Developer Information",
+    "description": "Project developer/manager information",
+    "required": false,
+    "example": {
+      "name": "Hong Gil Dong",
+      "email": "example@example.com",
+      "github": "github.com/example"
+    }
+  }
+} 
