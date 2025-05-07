@@ -13,6 +13,7 @@ setup(
         "langgraph>=0.4.0",
         "ollama>=0.4.0",
         "langsmith>=0.3.0",
+        "langchain-openai>=0.3.0",
     ],
     python_requires=">=3.10",
 ) 

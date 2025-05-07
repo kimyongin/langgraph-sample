@@ -1,7 +1,7 @@
 import json
 import textwrap
-from langchain_community.llms import Ollama
 from typing import Dict, List, Any, Union
+from src.utils.model import invoke
 
 def dedent_prompt(text):
     """문자열의 들여쓰기를 제거하여 가독성을 높입니다."""
@@ -184,9 +184,15 @@ def create_string_conversion_prompt(name: str, description: str, example: str, u
     )
 
 
-def convert_data(llm, name: str, description: str, example: Union[Dict, List, str], user_message: str):
+def convert_data(name: str, description: str, example: Union[Dict, List, str], user_message: str):
     """
     사용자의 일반 텍스트 응답을 example에 정의된 형식으로 변환합니다.
+    
+    Args:
+        name: 항목 이름
+        description: 항목 설명
+        example: 예시 데이터 구조 (dict, list, str)
+        user_message: 사용자의 응답 텍스트
     """
     example_type = type(example)
     
@@ -201,13 +207,8 @@ def convert_data(llm, name: str, description: str, example: Union[Dict, List, st
         # 단순 문자열 형식일 경우
         prompt = create_string_conversion_prompt(name, description, example, user_message)
     
-    # LLM을 사용하여 변환
-    try:
-        # Try new invoke() method first
-        result = llm.invoke(prompt)
-    except AttributeError:
-        # Fall back to old __call__ method if invoke() is not available
-        result = llm(prompt)
+    # 중앙 invoke 함수 호출
+    result = invoke(prompt)
     
     # 결과 추출 및 파싱
     return parse_llm_response(result, example_type)

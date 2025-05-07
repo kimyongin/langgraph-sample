@@ -17,7 +17,7 @@ from src.utils.paths import (
 
 # LLM 모델 관련 함수들
 from src.utils.model import (
-    get_llm
+    invoke
 )
 
 # 데코레이터 유틸리티 - 순환 참조 방지를 위해 타입만 노출
@@ -34,7 +34,7 @@ __all__ = [
     "get_project_paths",
     
     # LLM 모델 관련 함수들
-    "get_llm",
+    "invoke",
     
     # 데코레이터 유틸리티
     "node"

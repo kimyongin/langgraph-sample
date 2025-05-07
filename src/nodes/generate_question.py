@@ -2,7 +2,7 @@ import json
 import logging
 from src.state import State
 from src.target import TargetItem
-from src.utils.model import get_llm
+from src.utils.model import invoke
 from src.utils.convert import dedent_prompt
 from src.utils.decorator import node
 from src.entities import RESULT_QUESTION_GENERATED, RESULT_ERROR
@@ -60,9 +60,8 @@ def generate_question(state: State) -> State:
             example=json.dumps(state["current_target"]["example"], ensure_ascii=False, indent=2)
         )
     
-        # 프롬프트 실행
-        llm = get_llm(model_name=state["model_name"], temperature=state["temperature"])
-        question = llm.invoke(prompt)
+        # 중앙 invoke 함수 호출
+        question = invoke(prompt)
         
         # 프롬프트 실행 결과를 메시지에 추가
         if "messages" not in state:

@@ -2,7 +2,7 @@ import streamlit as st
 import logging
 import re
 import html
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 # 로깅을 INFO 레벨 메시지로 표시하도록 구성
 logging.basicConfig(
@@ -30,28 +30,136 @@ def initialize_session_state():
     """세션 상태 변수 초기화"""
     if "initialized" not in st.session_state:
         st.session_state.initialized = False
+    if "last_model_settings" not in st.session_state:
+        st.session_state.last_model_settings = None
 
-def render_sidebar():
-    """사이드바 UI 요소 렌더링"""
+def render_sidebar() -> Tuple[str, float, str, str]:
+    """사이드바 UI 요소 렌더링 및 모델 설정 관리"""
     with st.sidebar:
         st.header("Model Settings")
-        model = st.selectbox(
-            "Select Ollama Model",
-            ["llama3", "llama2", "mistral", "gemma"],
-            index=0
-        )
-        temperature = st.slider("Temperature", 0.0, 1.0, 0.7, 0.1)
         
-        # 에이전트 상태의 모델 설정 업데이트
-        StateManager.set_model_settings(model, temperature)
+        # 이전에 모델이 선택되었는지 확인
+        is_model_selected = StateManager.is_model_selected()
+        
+        # 저장된 모델 설정 가져오기
+        saved_model_name, saved_temperature, saved_model_type, saved_api_key = StateManager.get_model_settings()
+        
+        # 모델 유형 기본값 설정 (모델이 선택되지 않았으면 None)
+        model_type_index = 0  # 기본값은 None
+        if is_model_selected:
+            if saved_model_type == "ollama":
+                model_type_index = 1
+            elif saved_model_type == "openai":
+                model_type_index = 2
+        
+        # 모델 유형 선택
+        model_type = st.radio(
+            "Select Model Type",
+            ["None", "Ollama (Local)", "OpenAI (API)"],
+            index=model_type_index
+        )
+        
+        # 초기 상태 설정
+        model = None
+        api_key = None
+        model_type_id = None  # 내부 식별자로 사용될 모델 유형
+        is_valid_configuration = False  # 유효한 모델 구성인지 여부
+        
+        # 모델 유형에 따라 다른 모델 선택 옵션 표시
+        if model_type == "Ollama (Local)":
+            # 저장된 설정에서 Ollama 모델 기본값 설정
+            ollama_models = ["llama3", "llama2", "mistral", "gemma"]
+            default_model_index = 0
+            if is_model_selected and saved_model_type == "ollama" and saved_model_name in ollama_models:
+                default_model_index = ollama_models.index(saved_model_name)
+            
+            model = st.selectbox(
+                "Select Ollama Model",
+                ollama_models,
+                index=default_model_index
+            )
+            model_type_id = "ollama"
+            is_valid_configuration = True  # Ollama는 API 키가 필요없으므로 항상 유효
+            
+            # 모델 설정 업데이트
+            current_settings = (model, 0.7, model_type_id, None)
+            if st.session_state.last_model_settings != current_settings:
+                StateManager.set_model_settings(model, 0.7, model_type_id, None)
+                st.session_state.initialized = False
+                st.session_state.last_model_settings = current_settings
+            
+        elif model_type == "OpenAI (API)":
+            # 저장된 설정에서 OpenAI 모델 기본값 설정
+            openai_models = ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo"]
+            default_model_index = 0
+            if is_model_selected and saved_model_type == "openai" and saved_model_name in openai_models:
+                default_model_index = openai_models.index(saved_model_name)
+            
+            model = st.selectbox(
+                "Select OpenAI Model",
+                openai_models,
+                index=default_model_index
+            )
+            # API 키 입력 필드 (저장된 API 키를 기본값으로 설정)
+            api_key_value = ""
+            if is_model_selected and saved_model_type == "openai" and saved_api_key:
+                api_key_value = saved_api_key
+                
+            api_key = st.text_input(
+                "OpenAI API Key", 
+                value=api_key_value,
+                help="Enter your OpenAI API key"
+            )
+            model_type_id = "openai"
+            # API 키가 입력되었는지 확인 (None이 아니고 공백이 아닌지)
+            is_valid_configuration = api_key is not None and api_key.strip() != ""
+            
+            # API 키가 입력된 경우에만 모델 설정 업데이트
+            if is_valid_configuration:
+                current_settings = (model, 0.7, model_type_id, api_key)
+                if st.session_state.last_model_settings != current_settings:
+                    StateManager.set_model_settings(model, 0.7, model_type_id, api_key)
+                    st.session_state.initialized = False
+                    st.session_state.last_model_settings = current_settings
+                
+        else:
+            # None 선택 시 안내 메시지 표시 및 모델 상태 설정 초기화
+            st.info("👆 Please select a model type to continue")
+            # None 선택 시 상태에서 모델 설정 제거
+            if st.session_state.last_model_settings is not None:
+                StateManager.set_model_selected(False)
+                st.session_state.initialized = False
+                st.session_state.last_model_settings = None
+        
+        # 모델 유형이 선택된 경우에만 온도 설정 표시
+        if model_type != "None":
+            # 저장된 온도값을 기본값으로 설정
+            default_temperature = 0.7
+            if is_model_selected:
+                default_temperature = saved_temperature
+            
+            temperature = st.slider(
+                "Temperature", 
+                0.0, 1.0, default_temperature, 0.1
+            )
+            
+            # 온도 설정이 변경된 경우 모델 설정 업데이트
+            if is_valid_configuration:
+                current_settings = (model, temperature, model_type_id, api_key)
+                if st.session_state.last_model_settings != current_settings:
+                    StateManager.set_model_settings(model, temperature, model_type_id, api_key)
+                    st.session_state.initialized = False
+                    st.session_state.last_model_settings = current_settings
+        else:
+            temperature = 0.7
         
         st.markdown("---")
         render_results_section()
         
-        # 초기화 버튼 추가
+        # 모델이 선택된 경우에만 초기화 버튼 활성화
         st.markdown("---")
         st.header("Conversation Management")
-        if st.button("Reset", use_container_width=True, type="primary"):
+        if st.button("Reset", use_container_width=True, disabled=not StateManager.is_model_selected()):
             # 상태 초기화
             if StateManager.reset():
                 st.session_state.initialized = False
@@ -62,18 +170,27 @@ def render_sidebar():
         
         st.markdown("---")
         st.markdown("### Information")
-        st.markdown("""
-        This app is an interactive agent that collects data defined in target.json.
         
-        Please ensure the selected model is installed in Ollama.
+        # 모델 유형에 따라 다른 안내 메시지 표시
+        if model_type == "Ollama (Local)":
+            st.markdown("""
+            This app is an interactive agent that collects data defined in target.json.
+            
+            Please ensure the selected model is installed in Ollama.
+            
+            How to install models in Ollama:
+            ```
+            ollama pull [model_name]
+            ```
+            """)
+        elif model_type == "OpenAI (API)":
+            st.markdown("""
+            This app is an interactive agent that collects data defined in target.json.
+            
+            Using OpenAI models requires a valid API key.
+            """)
         
-        How to install models in Ollama:
-        ```
-        ollama pull [model_name]
-        ```
-        """)
-        
-        return model, temperature
+        return model, temperature, model_type_id, api_key
 
 def render_results_section():
     """수집 결과 표시"""
@@ -109,21 +226,37 @@ def main():
     st.title("📋 Data Collection Agent")
     st.markdown("An AI agent that collects information through conversations with users.")
     
-    model, temperature = render_sidebar()
+    model, temperature, model_type, api_key = render_sidebar()
+    
+    # 모델이 선택되지 않은 경우 안내 메시지만 표시하고 함수 종료
+    if not StateManager.is_model_selected():
+        st.info("👈 Please select a model and click 'Start Agent' to begin.")
+        return
+    
+    # ---- 이하 코드는 모델이 선택된 경우에만 실행됨 ----
+    
+    # 채팅 메시지 표시
     render_chat_messages()
     
     if not st.session_state.initialized:
         # 에이전트 초기화 및 응답 표시
-        with st.spinner("Thinking..."):
-            _, new_messages = Agent.initialize_chat(model, temperature)
+        with st.spinner("Initializing agent..."):
+            # 모든 매개변수를 명시적으로 전달
+            model_settings = StateManager.get_model_settings()
+            _, new_messages = Agent.initialize_chat(
+                model_name=model_settings[0], 
+                temperature=model_settings[1], 
+                model_type=model_settings[2], 
+                api_key=model_settings[3]
+            )
             
             for msg in new_messages:
                 with st.chat_message("assistant"):
                     st.markdown(msg["content"])
                     
         st.session_state.initialized = True
-        st.rerun()
     
+    # 채팅 입력 필드 표시 (모델이 선택된 경우에만 실행)
     user_input = st.chat_input("Enter your message...")
     if user_input:
         # UI에 사용자 메시지 추가
@@ -138,7 +271,8 @@ def main():
             for msg in new_ai_messages:
                 with st.chat_message("assistant"):
                     st.markdown(msg["content"])
-            
+        
+        # 필요한 경우에만 재실행 (사용자 입력 후 UI 업데이트를 위해)
         st.rerun()
 
 if __name__ == "__main__":

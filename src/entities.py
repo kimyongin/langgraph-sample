@@ -22,14 +22,21 @@ class Target(TypedDict):
     __root__: Dict[str, TargetItem]  # 대상 항목 매핑 (ID → 항목 정보)
 
 
+class Model(TypedDict):
+    """모델 설정 타입"""
+    name: str  # 모델 이름 (llama3, gpt-3.5-turbo, gpt-4 등)
+    temperature: float  # 생성 온도 파라미터
+    type: str  # 모델 타입 ("ollama" 또는 "openai")
+    api_key: Optional[str]  # OpenAI API 키 (type이 "openai"일 경우에만 사용)
+
+
 class State(TypedDict):
     """LangGraph 워크플로우의 상태를 정의하는 타입"""
     messages: List[Dict[str, Any]]  # 채팅 기록
     node_result: str  # 현재 노드의 실행 결과 (문자열 상수)
-    model_name: str  # Ollama 모델 이름
-    temperature: float  # 생성 온도 파라미터
     results: Dict[str, Any]  # 수집된 결과 (대상 id를 키로 사용)
     current_target: Optional[TargetItem]  # 현재 처리 중인 대상
+    model: Optional[Model]  # 모델 설정
 
 
 # 노드 결과 상수 정의

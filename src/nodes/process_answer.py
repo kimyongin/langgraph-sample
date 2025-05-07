@@ -3,7 +3,7 @@ import logging
 from typing import Any, Dict, List, Optional, Union
 from src.state import State
 from src.target import TargetItem
-from src.utils.model import get_llm
+from src.utils.model import invoke
 from src.utils.convert import convert_data, dedent_prompt
 from src.utils.decorator import node
 from src.entities import RESULT_ANSWER_SUFFICIENT, RESULT_ANSWER_INSUFFICIENT, RESULT_ERROR
@@ -81,15 +81,14 @@ def process_answer(state: State) -> State:
             messages=state["messages"]
         )
         
-        # 답변 평가
-        llm = get_llm(model_name=state["model_name"], temperature=state["temperature"])
-        evaluation = llm.invoke(prompt)
+        # 중앙 invoke 함수 호출
+        evaluation = invoke(prompt)
         state["messages"].append({"role": "debug", "content": evaluation})
         
         # 충분성에 따른 처리
         if "<code>SUFFICIENT</code>" in evaluation:           
             # 충분한 답변 처리
-            return handle_sufficient_answer(state, llm, current_target, evaluation)
+            return handle_sufficient_answer(state, current_target, evaluation)
         else:
             # 불충분한 답변 처리
             return handle_insufficient_answer(state, evaluation)
@@ -116,23 +115,21 @@ def extract_result(evaluation: str, tag_name: str) -> Optional[str]:
     return result
 
 
-def handle_sufficient_answer(state: State, llm, current_target, evaluation) -> State:
+def handle_sufficient_answer(state: State, current_target, evaluation) -> State:
     """충분한 답변 처리"""
     # XML에서 결과 추출
     result = extract_result(evaluation, "sufficient")
     if result is None:
         raise ValueError("결과를 추출할 수 없습니다.")
     
-    # 답변을 타겟 구조로 변환
+    # 새로운 convert_data 함수 사용
     formatted_answer = convert_data(
-        llm, 
         current_target["name"], 
         current_target["description"], 
         current_target["example"], 
         result
     )
     logger.info(f"형식화된 답변: {formatted_answer}")
-    current_target = state["current_target"]
     target_id = current_target["id"]
     
     # 결과 저장을 위한 상태 업데이트
