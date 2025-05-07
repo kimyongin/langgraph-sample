@@ -1,15 +1,20 @@
 import pytest
+from unittest.mock import patch, MagicMock
 from src.nodes.find_missing import find_missing, RESULT_TARGET_FOUND, RESULT_ALL_TARGETS_COMPLETE
 from src.state import State
 
 
-def test_find_missing_required_target():
+@patch('src.nodes.find_missing.get_targets')
+def test_find_missing_required_target(mock_get_targets):
+    """필수 타겟 중 하나가 누락된 경우를 테스트합니다."""
+    # get_targets 함수를 모의하여 테스트 타겟 데이터 반환
+    mock_get_targets.return_value = {
+        "target1": {"required": True, "name": "Target 1", "description": "Test 1", "example": "Example 1"},
+        "target2": {"required": True, "name": "Target 2", "description": "Test 2", "example": "Example 2"}
+    }
+    
     # Setup state with a required target not in results
     state = State({
-        "targets": {
-            "target1": {"required": True},
-            "target2": {"required": True}
-        },
         "results": {
             "target2": "some result"
         },
@@ -25,14 +30,18 @@ def test_find_missing_required_target():
     assert result["node_result"] == RESULT_TARGET_FOUND
 
 
-def test_find_missing_all_required_complete():
+@patch('src.nodes.find_missing.get_targets')
+def test_find_missing_all_required_complete(mock_get_targets):
+    """모든 필수 타겟이 완료된 경우를 테스트합니다."""
+    # get_targets 함수를 모의하여 테스트 타겟 데이터 반환
+    mock_get_targets.return_value = {
+        "target1": {"required": True, "name": "Target 1", "description": "Test 1", "example": "Example 1"},
+        "target2": {"required": True, "name": "Target 2", "description": "Test 2", "example": "Example 2"},
+        "target3": {"required": False, "name": "Target 3", "description": "Test 3", "example": "Example 3"}
+    }
+    
     # Setup state with all required targets in results
     state = State({
-        "targets": {
-            "target1": {"required": True},
-            "target2": {"required": True},
-            "target3": {"required": False}
-        },
         "results": {
             "target1": "result1",
             "target2": "result2"
@@ -49,13 +58,17 @@ def test_find_missing_all_required_complete():
     assert result["current_target"] is None
 
 
-def test_find_missing_skip_non_required():
+@patch('src.nodes.find_missing.get_targets')
+def test_find_missing_skip_non_required(mock_get_targets):
+    """필수가 아닌 타겟만 누락된 경우를 테스트합니다."""
+    # get_targets 함수를 모의하여 테스트 타겟 데이터 반환
+    mock_get_targets.return_value = {
+        "target1": {"required": True, "name": "Target 1", "description": "Test 1", "example": "Example 1"},
+        "target2": {"required": False, "name": "Target 2", "description": "Test 2", "example": "Example 2"}
+    }
+    
     # Setup state with only non-required targets missing
     state = State({
-        "targets": {
-            "target1": {"required": True},
-            "target2": {"required": False}
-        },
         "results": {
             "target1": "result1"
         },

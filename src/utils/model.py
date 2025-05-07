@@ -68,19 +68,12 @@ def invoke(prompt: str):
     """
     # state.json에서 모델 설정 읽기
     state = _read_state()
-    model_config = state.get("model")
-    
-    # 모델이 None이면 기본값 사용
-    if model_config is None:
-        model_name = "llama3"
-        temperature = 0.7
-        model_type = "ollama"
-        api_key = None
-    else:
-        model_name = model_config.get("name", "llama3")
-        temperature = model_config.get("temperature", 0.7)
-        model_type = model_config.get("type", "ollama")
-        api_key = model_config.get("api_key")
+    model_config = state.get("model")    
+
+    model_name = model_config.get("name")
+    temperature = model_config.get("temperature")
+    model_type = model_config.get("type")
+    api_key = model_config.get("api_key")
     
     # LLM 객체 생성
     llm = _get_llm_instance(model_name, temperature, model_type, api_key)
