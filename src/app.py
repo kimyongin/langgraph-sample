@@ -61,6 +61,7 @@ def render_sidebar() -> Tuple[str, float, str, str]:
         
         # 초기 상태 설정
         model = None
+        temperature = None
         api_key = None
         model_type_id = None  # 내부 식별자로 사용될 모델 유형
         is_valid_configuration = False  # 유효한 모델 구성인지 여부
@@ -82,9 +83,9 @@ def render_sidebar() -> Tuple[str, float, str, str]:
             is_valid_configuration = True  # Ollama는 API 키가 필요없으므로 항상 유효
             
             # 모델 설정 업데이트
-            current_settings = (model, 0.7, model_type_id, None)
+            current_settings = (model, 0.2, model_type_id, None)
             if st.session_state.last_model_settings != current_settings:
-                StateManager.set_model_settings(model, 0.7, model_type_id, None)
+                StateManager.set_model_settings(model, 0.2, model_type_id, None)
                 st.session_state.initialized = False
                 st.session_state.last_model_settings = current_settings
             
@@ -116,9 +117,9 @@ def render_sidebar() -> Tuple[str, float, str, str]:
             
             # API 키가 입력된 경우에만 모델 설정 업데이트
             if is_valid_configuration:
-                current_settings = (model, 0.7, model_type_id, api_key)
+                current_settings = (model, 0.2, model_type_id, api_key)
                 if st.session_state.last_model_settings != current_settings:
-                    StateManager.set_model_settings(model, 0.7, model_type_id, api_key)
+                    StateManager.set_model_settings(model, 0.2, model_type_id, api_key)
                     st.session_state.initialized = False
                     st.session_state.last_model_settings = current_settings
                 
@@ -134,7 +135,7 @@ def render_sidebar() -> Tuple[str, float, str, str]:
         # 모델 유형이 선택된 경우에만 온도 설정 표시
         if model_type != "None":
             # 저장된 온도값을 기본값으로 설정
-            default_temperature = 0.7
+            default_temperature = 0.2
             if is_model_selected:
                 default_temperature = saved_temperature
             
@@ -151,7 +152,8 @@ def render_sidebar() -> Tuple[str, float, str, str]:
                     st.session_state.initialized = False
                     st.session_state.last_model_settings = current_settings
         else:
-            temperature = 0.7
+            # 모델이 None일 때는 temperature 값을 None으로 설정
+            temperature = None
         
         st.markdown("---")
         render_results_section()
@@ -230,7 +232,7 @@ def main():
     
     # 모델이 선택되지 않은 경우 안내 메시지만 표시하고 함수 종료
     if not StateManager.is_model_selected():
-        st.info("👈 Please select a model and click 'Start Agent' to begin.")
+        st.info("👈 모델을 선택해야 대화를 시작할 수 있습니다. 사이드바에서 모델을 선택해주세요.")
         return
     
     # ---- 이하 코드는 모델이 선택된 경우에만 실행됨 ----
@@ -257,7 +259,7 @@ def main():
         st.session_state.initialized = True
     
     # 채팅 입력 필드 표시 (모델이 선택된 경우에만 실행)
-    user_input = st.chat_input("Enter your message...")
+    user_input = st.chat_input("Enter your message...", disabled=not StateManager.is_model_selected())
     if user_input:
         # UI에 사용자 메시지 추가
         with st.chat_message("user"):

@@ -18,8 +18,8 @@ def _read_state():
     
     return state
 
-def _get_llm_instance(model_name: str = "llama3", temperature: float = 0.7, 
-                     model_type: str = "ollama", api_key: Optional[str] = None):
+def _get_llm_instance(model_name: str, temperature: float, 
+                     model_type: str, api_key: Optional[str]):
     """
     모델 타입에 따라 적절한 LLM 객체를 초기화하고 반환합니다.
     
@@ -68,7 +68,12 @@ def invoke(prompt: str):
     """
     # state.json에서 모델 설정 읽기
     state = _read_state()
-    model_config = state.get("model")    
+    model_config = state.get("model")
+    
+    # 모델이 선택되지 않은 경우 에러 발생
+    if model_config is None:
+        logger.error("모델이 선택되지 않았습니다.")
+        raise ValueError("모델을 먼저 선택해주세요.")
 
     model_name = model_config.get("name")
     temperature = model_config.get("temperature")

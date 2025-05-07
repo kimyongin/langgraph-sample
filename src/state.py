@@ -293,18 +293,18 @@ class StateManager:
         model = state.get("model")
         
         if model is None:
-            # 모델이 선택되지 않은 경우 기본값 반환
-            return "llama3", 0.7, "ollama", None
+            # 모델이 선택되지 않은 경우 None 반환
+            return None, None, None, None
         
         return (
-            model.get("name", "llama3"), 
-            model.get("temperature", 0.7),
-            model.get("type", "ollama"),
+            model.get("name"), 
+            model.get("temperature"),
+            model.get("type"),
             model.get("api_key")
         )
     
     @staticmethod
-    def set_model_settings(model_name: str, temperature: float, model_type: str = "ollama", api_key: Optional[str] = None) -> None:
+    def set_model_settings(model_name: str, temperature: float, model_type: str, api_key: Optional[str] = None) -> None:
         """
         상태에 모델 설정을 업데이트합니다.
         
@@ -429,13 +429,6 @@ class StateManager:
         if not selected:
             # 모델 선택 해제
             state["model"] = None
-        elif state.get("model") is None and selected:
-            # 모델 선택 설정 (기본 모델)
-            state["model"] = {
-                "name": "llama3",
-                "temperature": 0.7,
-                "type": "ollama",
-                "api_key": None
-            }
+        # 모델 선택 설정은 set_model_settings에서 처리
         
         _save_state(state)

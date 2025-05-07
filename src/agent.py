@@ -54,8 +54,8 @@ class Agent:
         return all_messages, new_messages
     
     @staticmethod
-    def initialize_chat(model_name: str = "llama3", temperature: float = 0.7, 
-                        model_type: str = "ollama", api_key: Optional[str] = None) -> Tuple[List[Dict], List[Dict]]:
+    def initialize_chat(model_name: str, temperature: float, 
+                        model_type: str, api_key: Optional[str]) -> Tuple[List[Dict], List[Dict]]:
         """
         에이전트와의 채팅을 초기화하거나 재설정합니다.
         
@@ -163,9 +163,9 @@ class Agent:
         return workflow.compile()
     
     @staticmethod
-    def _run_collector(messages: List[Dict], model_name: str = "llama3", 
-                      temperature: float = 0.7, model_type: str = "ollama", 
-                      api_key: Optional[str] = None) -> State:
+    def _run_collector(messages: List[Dict], model_name: str, 
+                      temperature: float, model_type: str, 
+                      api_key: Optional[str]) -> State:
         """
         메시지와 모델 설정으로 데이터 수집 워크플로우를 실행합니다.
         
